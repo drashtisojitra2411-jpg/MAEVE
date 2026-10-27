@@ -1,0 +1,27 @@
+services:
+  maeve:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: maeve:latest
+    container_name: maeve-app
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      - NODE_ENV=production
+      - PORT=8787
+      - MAEVE_SESSION_SECRET=${MAEVE_SESSION_SECRET:-maeve-production-super-secret-key-replace-me}
+      - MAEVE_DATA_DIR=/app/server/data
+      - MAEVE_DB=/app/server/data/maeve.db
+      - MAEVE_CORS_ORIGIN=${MAEVE_CORS_ORIGIN:-}
+      - MAEVE_RATE_LIMIT=1
+    volumes:
+      # Persistent SQLite database and user garment cutouts
+      - maeve-data:/app/server/data
+      # DeepFashion2 model weights
+      - ./server/cv/models:/app/server/cv/models:ro
+
+volumes:
+  maeve-data:
+    driver: local

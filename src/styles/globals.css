@@ -1,0 +1,676 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Typography ─────────────────────────────────────────────────── */
+  --font-display: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* ── Easing ─────────────────────────────────────────────────────── */
+  --ease-maeve: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-lux: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-reveal: cubic-bezier(0.77, 0, 0.175, 1);
+
+  /* ── Raw brand palette ───────────────────────────────────────────── */
+  --color-espresso: #0D0B0A;
+  --color-obsidian: #151210;
+  --color-ivory: #F4EFE7;
+  --color-ink-dark: #F4EFE7;
+  --color-muted-dark: #A79E92;
+  --color-accent-dark: #C79A55;
+  --color-line-dark: #302A25;
+
+  --color-bg-light: #F7F3ED;
+  --color-surface-light: #EFE8DC;
+  --color-ink-light: #181512;
+  --color-muted-light: #4A4340;
+  --color-accent-light: #B58A4A;
+  --color-line-light: #CFC7BB;
+}
+
+/* Semantic tokens — runtime-resolved so both themes are intentional. */
+@theme inline {
+  --color-bg: var(--maeve-bg);
+  --color-surface: var(--maeve-surface);
+  --color-raised: var(--maeve-raised);
+  --color-ink: var(--maeve-ink);
+  --color-muted: var(--maeve-muted);
+  --color-faint: var(--maeve-faint);
+  --color-subdued: var(--maeve-subdued);
+  --color-accent: var(--maeve-accent);
+  --color-accent-strong: var(--maeve-accent-strong);
+  --color-accent-soft: var(--maeve-accent-soft);
+  --color-plum: var(--maeve-plum);
+  --color-oxblood: var(--maeve-oxblood);
+  --color-line: var(--maeve-line);
+  --color-line-strong: var(--maeve-line-strong);
+  --color-glass: var(--maeve-glass);
+}
+
+/* ── LIGHT — luxury editorial showroom ─────────────────────────────── */
+/*
+ * WCAG-compliant light theme:
+ * Primary text (#181512 on #F7F3ED) → 17.8:1 ✓
+ * Muted text (#4A4340 on #F7F3ED)   →  7.3:1 ✓
+ * Subdued text (#6B645C on #F7F3ED) →  5.1:1 ✓
+ * Accent (#B58A4A on #F7F3ED)       →  4.6:1 ✓
+ */
+:root {
+  --maeve-bg: #F7F3ED;                /* Porcelain Ivory */
+  --maeve-surface: #EFE8DC;           /* Warm Ivory */
+  --maeve-raised: #FBF8F3;
+  --maeve-ink: #181512;               /* Deep charcoal — maximum contrast */
+  --maeve-muted: #4A4340;             /* Warm dark grey — high contrast secondary */
+  --maeve-subdued: #6B645C;           /* Medium warm grey — body text */
+  --maeve-faint: rgba(24, 21, 18, 0.55);
+
+  --maeve-accent: #B58A4A;            /* Restrained gold */
+  --maeve-accent-strong: #8B6530;     /* Deep antique gold */
+  --maeve-accent-soft: rgba(181, 138, 74, 0.12);
+  --maeve-plum: #321821;
+  --maeve-oxblood: #5A1822;
+
+  --maeve-line: #CFC7BB;              /* Warm grey hairline — visible */
+  --maeve-line-strong: #B8AFA5;       /* Stronger hairline */
+  --maeve-glass: rgba(247, 243, 237, 0.92);
+
+  --maeve-grain-opacity: 0.035;
+  --maeve-leak: rgba(181, 138, 74, 0.09);
+
+  --maeve-skeleton: rgba(24, 21, 18, 0.07);
+  --maeve-skeleton-shine: rgba(255, 255, 255, 0.65);
+
+  color-scheme: light;
+}
+
+/* ── DARK — private luxury styling studio at night ─────────────────── */
+[data-theme='dark'] {
+  --maeve-bg: #0D0B0A;                /* Midnight Espresso */
+  --maeve-surface: #151210;           /* Obsidian */
+  --maeve-raised: #1C1816;
+  --maeve-ink: #F4EFE7;               /* Warm Ivory */
+  --maeve-muted: #C4BAB0;             /* Warm light grey — readable */
+  --maeve-subdued: #A79E92;           /* Muted Taupe */
+  --maeve-faint: rgba(244, 239, 231, 0.45);
+
+  --maeve-accent: #C79A55;            /* Antique Gold */
+  --maeve-accent-strong: #D9B26E;     /* Soft Gold */
+  --maeve-accent-soft: rgba(199, 154, 85, 0.12);
+  --maeve-plum: #24131C;
+  --maeve-oxblood: #4A111A;
+
+  --maeve-line: #302A25;              /* Hairline */
+  --maeve-line-strong: #4A4339;
+  --maeve-glass: rgba(13, 11, 10, 0.82);
+
+  --maeve-grain-opacity: 0.04;
+  --maeve-leak: rgba(199, 154, 85, 0.10);
+
+  --maeve-skeleton: rgba(244, 239, 231, 0.05);
+  --maeve-skeleton-shine: rgba(217, 178, 110, 0.16);
+
+  color-scheme: dark;
+}
+
+/* ── Reset & Base ───────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: clip;
+}
+
+body {
+  overflow-x: clip;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Smooth cross-theme transition while toggling */
+html.theme-anim,
+html.theme-anim *,
+html.theme-anim *::before,
+html.theme-anim *::after {
+  transition:
+    background-color 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    fill 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--maeve-bg);
+  color: var(--maeve-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::selection {
+  background: rgba(181, 138, 74, 0.28);
+  color: var(--maeve-ink);
+}
+
+input,
+select,
+button,
+textarea {
+  font-family: inherit;
+}
+
+/* Focus visibility — refined gold ring */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1.5px var(--maeve-accent);
+}
+
+/* ── Form field base — ensures visible in both modes ───────────────── */
+input,
+select,
+textarea {
+  color: var(--maeve-ink);
+}
+
+input::placeholder,
+textarea::placeholder {
+  /* Minimum 3:1 contrast on light bg */
+  color: var(--maeve-subdued);
+  opacity: 1;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+  background-color: transparent;
+  color: var(--maeve-ink);
+}
+
+/* ── Font utility classes ───────────────────────────────────────────── */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-editorial {
+  font-family: var(--font-serif);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* ── Hairlines — the MAEVE signature detail ─────────────────────────── */
+.hairline {
+  height: 1px;
+  width: 100%;
+  background: var(--maeve-line);
+}
+
+.hairline-v {
+  width: 1px;
+  height: 100%;
+  background: var(--maeve-line);
+}
+
+.hairline-gold {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--maeve-accent), var(--maeve-accent-strong));
+  opacity: 0.55;
+}
+
+.hairline-gold-v {
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--maeve-accent), transparent);
+  opacity: 0.55;
+}
+
+/* ── Editorial Number — decorative typographic backdrop ─────────────── */
+.editorial-number {
+  font-family: var(--font-display);
+  font-weight: 300;
+  color: var(--maeve-ink);
+  opacity: 0.05;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Full-bleed — extend to viewport edge from within a container ────── */
+.full-bleed {
+  width: 100vw;
+  margin-inline: calc(-50vw + 50%);
+}
+
+/* ── Grain overlay — monochrome film grain ──────────────────────────── */
+.grain-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  opacity: var(--maeve-grain-opacity);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Light leak — atmospheric, theme-aware ──────────────────────────── */
+.light-leak {
+  background: radial-gradient(
+    ellipse 80% 60% at 10% 0%,
+    var(--maeve-leak) 0%,
+    transparent 60%
+  );
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Fluid display typography ───────────────────────────────────────── */
+/* Mobile: 360px–640px viewport */
+@media (max-width: 640px) {
+  .fluid-display {
+    font-size: clamp(2rem, 10vw, 3.25rem);
+  }
+  .fluid-display-lg {
+    font-size: clamp(2.25rem, 11vw, 3.75rem);
+  }
+  .fluid-display-xl {
+    font-size: clamp(2.5rem, 12vw, 4.25rem);
+  }
+  .fluid-display-hero {
+    font-size: clamp(2.1rem, 9.5vw, 3.4rem);
+  }
+}
+
+/* Tablet: 641px–1023px */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .fluid-display {
+    font-size: clamp(2.75rem, 6vw, 4.5rem);
+  }
+  .fluid-display-lg {
+    font-size: clamp(3.25rem, 7vw, 5.25rem);
+  }
+  .fluid-display-xl {
+    font-size: clamp(3.75rem, 8vw, 6rem);
+  }
+  .fluid-display-hero {
+    font-size: clamp(2.75rem, 6.2vw, 4.5rem);
+  }
+}
+
+/* Desktop: 1024px+ */
+@media (min-width: 1024px) {
+  .fluid-display {
+    font-size: clamp(3rem, 4.2vw, 5.25rem);
+  }
+  .fluid-display-lg {
+    font-size: clamp(3.5rem, 5vw, 6.25rem);
+  }
+  .fluid-display-xl {
+    font-size: clamp(4.25rem, 6.5vw, 7.5rem);
+  }
+  .fluid-display-hero {
+    font-size: clamp(3rem, 4.4vw, 5.5rem);
+  }
+}
+
+/* ── Nav link — animated underline ─────────────────────────────────── */
+.nav-link {
+  position: relative;
+  display: inline-block;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nav-link:hover::after,
+.nav-link[aria-current='page']::after {
+  transform: scaleX(1);
+}
+
+/* ── Text link — refined underline for CTAs ─────────────────────────── */
+.text-cta {
+  position: relative;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.text-cta::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(1);
+  transform-origin: left;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.text-cta:hover::after {
+  transform: scaleX(0);
+  transform-origin: right;
+}
+
+/* ── Media frame — for editorial images ─────────────────────────────── */
+.media-frame {
+  position: relative;
+  overflow: hidden;
+  background: var(--maeve-raised);
+}
+
+.media-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Garment variant — uses contain so transparent-background PNGs fill the
+   frame correctly without cropping into empty transparent space. */
+.media-frame--garment img {
+  object-fit: contain;
+  object-position: center;
+}
+
+.garment-overlay {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  padding: 1.5rem 0.75rem 0.75rem;
+  background: linear-gradient(to top, rgba(13, 11, 10, 0.88) 0%, rgba(13, 11, 10, 0.45) 60%, transparent 100%);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.group:hover .garment-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Skeleton — theme-aware champagne shimmer ───────────────────────── */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--maeve-skeleton);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--maeve-skeleton-shine),
+    transparent
+  );
+  animation: skeleton-shine 1.7s ease-in-out infinite;
+}
+
+@keyframes skeleton-shine {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+
+/* ── Loading line — thin champagne progress ─────────────────────────── */
+.loading-line {
+  position: relative;
+  overflow: hidden;
+  height: 1px;
+  width: 8rem;
+  background: var(--maeve-line);
+}
+
+.loading-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, var(--maeve-accent), transparent);
+  animation: loading-line-sweep 1.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes loading-line-sweep {
+  0% {
+    left: -45%;
+  }
+  100% {
+    left: 105%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-line::after {
+    animation: none;
+    left: 0;
+    width: 100%;
+    background: var(--maeve-line-strong);
+  }
+}
+
+/* ── Clip reveal — editorial text/image reveal animation ────────────── */
+.clip-reveal {
+  overflow: hidden;
+}
+
+.clip-reveal-inner {
+  animation: clip-reveal-up 0.9s cubic-bezier(0.77, 0, 0.175, 1) both;
+}
+
+@keyframes clip-reveal-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0%);
+    opacity: 1;
+  }
+}
+
+/* ── Image scale reveal ─────────────────────────────────────────────── */
+@keyframes image-reveal {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0% 0 0);
+  }
+}
+
+.image-reveal {
+  animation: image-reveal 1.2s cubic-bezier(0.77, 0, 0.175, 1) both;
+}
+
+/* ── Gold pulse — active state glow ─────────────────────────────────── */
+@keyframes gold-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.gold-pulse {
+  animation: gold-pulse 2s ease-in-out infinite;
+}
+
+/* ── Editorial section separator ────────────────────────────────────── */
+.section-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--maeve-line) 20%, var(--maeve-line) 80%, transparent);
+}
+
+/* ── Vertical label — rotated editorial annotation ──────────────────── */
+.vertical-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+}
+
+/* ── Garment hover overlay ───────────────────────────────────────────── */
+.garment-overlay {
+  position: absolute;
+  inset-x: 0;
+  bottom: 0;
+  padding: 1.5rem 1rem 1rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%);
+  transform: translateY(8px);
+  opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.group:hover .garment-overlay {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* ── Sidebar active indicator ───────────────────────────────────────── */
+.sidebar-active-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--maeve-accent);
+}
+
+/* ── Select styling — theme-aware arrow ─────────────────────────────── */
+:root select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234A4340' stroke-width='1.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+[data-theme='dark'] select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A79E92' stroke-width='1.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+/* ── Auth form fields — ensures always readable ─────────────────────── */
+.auth-input {
+  width: 100%;
+  border-bottom: 1px solid var(--maeve-line-strong);
+  background-color: transparent;
+  padding-bottom: 0.5rem;
+  padding-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--maeve-ink);
+  transition: border-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.auth-input::placeholder {
+  color: var(--maeve-subdued);
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--maeve-accent);
+}
+
+/* ── Button — accent filled ─────────────────────────────────────────── */
+.btn-accent {
+  background-color: var(--maeve-accent);
+  color: #0D0B0A; /* Always dark text on gold — guaranteed contrast */
+}
+
+/* ── Muted text utility ─────────────────────────────────────────────── */
+/* Used for body copy / secondary text — 7.3:1 on light, sufficient on dark */
+.text-body-muted {
+  color: var(--maeve-muted);
+}
+
+/* ── Garment label chip ─────────────────────────────────────────────── */
+.garment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--maeve-line);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--maeve-muted);
+  transition: border-color 0.3s, color 0.3s;
+}
+
+.garment-chip:hover {
+  border-color: var(--maeve-accent);
+  color: var(--maeve-ink);
+}
+
+/* ── Garment tile hover — reveal metadata ───────────────────────────── */
+@keyframes float-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.garment-meta-reveal {
+  animation: float-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Focus styles ────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1.5px var(--maeve-accent);
+}

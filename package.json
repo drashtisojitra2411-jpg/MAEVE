@@ -1,0 +1,36 @@
+{
+  "name": "maeve",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:client": "vite",
+    "dev:server": "node --disable-warning=ExperimentalWarning server/src/index.js",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "test:server": "npm --prefix server test",
+    "test:persistence": "node --disable-warning=ExperimentalWarning scripts/verify_persistence_recovery.mjs",
+    "db:backup": "node --disable-warning=ExperimentalWarning scripts/dbBackup.mjs backup",
+    "db:restore": "node --disable-warning=ExperimentalWarning scripts/dbBackup.mjs restore"
+  },
+  "dependencies": {
+    "framer-motion": "^13.3.0",
+    "lucide-react": "^1.46.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxlint": "^1.81.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0"
+  }
+}

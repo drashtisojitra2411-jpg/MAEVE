@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+node_modules
+server/node_modules
+server/cv/.venv
+server/cv/__pycache__
+server/data/maeve.db*
+server/data/images
+server/data/backups
+server/data/*.db*
+dist
+.git
+.agents
+.gemini
+*.log

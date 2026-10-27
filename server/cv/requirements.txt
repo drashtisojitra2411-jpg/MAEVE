@@ -1,0 +1,23 @@
+# MAEVE computer-vision worker runtime.
+#
+# `infer.py` needs only numpy, Pillow and ultralytics. Ultralytics supplies the
+# rest (opencv, matplotlib, etc.) as normal dependencies; PyTorch is pinned to a
+# CPU build so a machine without a CUDA GPU still gets a working `--device cpu`
+# install (the worker always runs on CPU).
+#
+# Install:
+#     py -3 -m venv .venv
+#     .venv\Scripts\python -m pip install --upgrade pip
+#     .venv\Scripts\python -m pip install -r requirements.txt
+#
+# The Node backend resolves this venv automatically (config.pythonBin) unless
+# the MAEVE_PYTHON environment variable is set explicitly.
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.14.0+cpu
+torchvision==0.29.0+cpu
+numpy==2.4.6
+Pillow==12.3.0
+opencv-python==5.0.0.93
+ultralytics==8.4.155
