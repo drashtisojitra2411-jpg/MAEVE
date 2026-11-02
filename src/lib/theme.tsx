@@ -15,6 +15,12 @@ const STORAGE_KEY = 'maeve-theme'
 function readInitialTheme(): Theme {
   const applied = document.documentElement.dataset.theme
   if (applied === 'light' || applied === 'dark') return applied
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored === 'light' || stored === 'dark') return stored
+  } catch {
+    /* storage unavailable */
+  }
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
 }
 

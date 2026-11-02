@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useScrollProgress } from '../../hooks/useScrollProgress'
+import { useAuth } from '../../lib/auth'
 import { cn } from '../../lib/cn'
 import { maeveEase } from '../../lib/motion'
 import { ThemeToggle } from '../ui/ThemeToggle'
@@ -18,6 +19,7 @@ export function LandingNav() {
   const scrolled = useScrollProgress(60)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
+  const { isAuthenticated } = useAuth()
 
   const isHash = (href: string) => href.startsWith('#')
 
@@ -73,19 +75,30 @@ export function LandingNav() {
           <div className="hidden items-center gap-8 lg:flex">
             <ThemeToggle />
             <div className="h-4 w-px bg-line" aria-hidden="true" />
-            <Link
-              to="/signin"
-              className="text-cta text-[10px] font-medium uppercase tracking-[0.3em] transition-colors duration-500 hover:text-ink"
-              style={{ color: 'var(--maeve-muted)' }}
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/signin"
-              className="text-cta text-[10px] font-medium uppercase tracking-[0.3em] text-accent transition-colors duration-500"
-            >
-              Enter MAEVE →
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/dashboard"
+                className="text-cta text-[10px] font-medium uppercase tracking-[0.3em] text-accent transition-colors duration-500 hover:text-accent-strong"
+              >
+                Enter Studio →
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/signin"
+                  className="text-cta text-[10px] font-medium uppercase tracking-[0.3em] transition-colors duration-500 hover:text-ink"
+                  style={{ color: 'var(--maeve-muted)' }}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signin"
+                  className="text-cta text-[10px] font-medium uppercase tracking-[0.3em] text-accent transition-colors duration-500"
+                >
+                  Enter MAEVE →
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile controls */}
@@ -159,20 +172,32 @@ export function LandingNav() {
               </motion.ul>
 
               <div className="mt-auto flex flex-col gap-4 pb-8">
-                <Link
-                  to="/signin"
-                  onClick={() => setMobileOpen(false)}
-                  className="border border-line px-6 py-4 text-center text-[10px] uppercase tracking-[0.3em] text-muted transition-colors hover:border-accent/60 hover:text-ink"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/signin"
-                  onClick={() => setMobileOpen(false)}
-                  className="bg-accent px-6 py-4 text-center text-[10px] uppercase tracking-[0.3em] text-espresso transition-opacity hover:opacity-90"
-                >
-                  Enter MAEVE
-                </Link>
+                {isAuthenticated ? (
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMobileOpen(false)}
+                    className="bg-accent px-6 py-4 text-center text-[10px] uppercase tracking-[0.3em] text-espresso transition-opacity hover:opacity-90"
+                  >
+                    Enter Studio →
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      to="/signin"
+                      onClick={() => setMobileOpen(false)}
+                      className="border border-line px-6 py-4 text-center text-[10px] uppercase tracking-[0.3em] text-muted transition-colors hover:border-accent/60 hover:text-ink"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/signin"
+                      onClick={() => setMobileOpen(false)}
+                      className="bg-accent px-6 py-4 text-center text-[10px] uppercase tracking-[0.3em] text-espresso transition-opacity hover:opacity-90"
+                    >
+                      Enter MAEVE
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>

@@ -1,0 +1,86 @@
+[
+  {
+    "id": 1,
+    "type": "Shirt (cotton button-down)",
+    "path": "public/g-shirt.jpg",
+    "outcome": {
+      "accepted": false,
+      "status": 500,
+      "code": "SERVER_ERROR",
+      "message": "Internal server error.",
+      "uploadMs": 52
+    }
+  },
+  {
+    "id": 3,
+    "type": "Pants/trousers (formal)",
+    "path": "public/g-trousers.jpg",
+    "outcome": {
+      "accepted": false,
+      "status": 500,
+      "code": "SERVER_ERROR",
+      "message": "Internal server error.",
+      "uploadMs": 34
+    }
+  },
+  {
+    "id": 5,
+    "type": "Dress (evening gown)",
+    "path": "public/g-dress.jpg",
+    "outcome": {
+      "accepted": false,
+      "status": 500,
+      "code": "SERVER_ERROR",
+      "message": "Internal server error.",
+      "uploadMs": 9
+    }
+  },
+  {
+    "id": 10,
+    "type": "Garment on bed (clothes-on-bed)",
+    "path": "server/test/fixtures/real-6347605.jpg",
+    "outcome": {
+      "accepted": false,
+      "status": 500,
+      "code": "SERVER_ERROR",
+      "message": "Internal server error.",
+      "uploadMs": 9
+    }
+  },
+  {
+    "id": 16,
+    "type": "Non-garment file (invalid text)",
+    "path": "server/test/fixtures/invalid.txt",
+    "outcome": {
+      "accepted": false,
+      "status": 500,
+      "code": "SERVER_ERROR",
+      "message": "Internal server error.",
+      "uploadMs": 5
+    }
+  },
+  {
+    "id": 17,
+    "type": "Very small/low-quality image (16x16)",
+    "path": "scratch/tiny_image.jpg",
+    "outcome": {
+      "accepted": false,
+      "status": 500,
+      "code": "SERVER_ERROR",
+      "message": "Internal server error.",
+      "uploadMs": 10
+    }
+  },
+  {
+    "id": 18,
+    "type": "Duplicate garment upload (shirt retry)",
+    "path": "public/g-shirt.jpg",
+    "outcome": {
+      "accepted": false,
+      "status": 500,
+      "code": "SERVER_ERROR",
+      "message": "Internal server error.",
+      "uploadMs": 16
+    }
+  }
+]

@@ -22,8 +22,8 @@ interface AuthContextValue {
   isAuthenticated: boolean
   /** Set when the backend could not be reached while checking the session. */
   serviceError: string | null
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (name: string, email: string, password: string) => Promise<void>
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<void>
+  signUp: (name: string, email: string, password: string, rememberMe?: boolean) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -80,13 +80,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string, rememberMe = false) => {
     setServiceError(null)
     if (!email.trim() || !password) {
       throw new Error('Please enter your email and password.')
     }
     try {
-      const { user: next, token: nextToken } = await loginAccount(email.trim(), password)
+      const { user: next, token: nextToken } = await loginAccount(email.trim(), password, rememberMe)
       setUser(next)
       setToken(nextToken)
       setStatus('authenticated')
@@ -95,13 +95,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const signUp = useCallback(async (name: string, email: string, password: string) => {
+  const signUp = useCallback(async (name: string, email: string, password: string, rememberMe = false) => {
     setServiceError(null)
     if (!name.trim()) throw new Error('Please tell us your name.')
     if (!email.trim()) throw new Error('Please enter a valid email address.')
     if (password.length < 6) throw new Error('Your password needs at least 6 characters.')
     try {
-      const { user: next, token: nextToken } = await registerAccount(name.trim(), email.trim(), password)
+      const { user: next, token: nextToken } = await registerAccount(name.trim(), email.trim(), password, rememberMe)
       setUser(next)
       setToken(nextToken)
       setStatus('authenticated')

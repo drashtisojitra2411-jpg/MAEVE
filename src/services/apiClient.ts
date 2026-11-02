@@ -9,6 +9,7 @@
  */
 
 const TOKEN_KEY = 'maeve-session-token'
+const REMEMBER_KEY = 'maeve-remember-me'
 
 let token: string | null = null
 
@@ -18,11 +19,24 @@ export interface AuthUser {
   email: string
 }
 
-export function setApiToken(next: string | null): void {
+export function setApiToken(next: string | null, rememberMe = false): void {
   token = next
   try {
-    if (next) localStorage.setItem(TOKEN_KEY, next)
-    else localStorage.removeItem(TOKEN_KEY)
+    if (next) {
+      if (rememberMe) {
+        localStorage.setItem(TOKEN_KEY, next)
+        localStorage.setItem(REMEMBER_KEY, '1')
+        sessionStorage.removeItem(TOKEN_KEY)
+      } else {
+        sessionStorage.setItem(TOKEN_KEY, next)
+        localStorage.removeItem(TOKEN_KEY)
+        localStorage.removeItem(REMEMBER_KEY)
+      }
+    } else {
+      localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(REMEMBER_KEY)
+      sessionStorage.removeItem(TOKEN_KEY)
+    }
   } catch {
     /* storage unavailable */
   }
@@ -31,7 +45,14 @@ export function setApiToken(next: string | null): void {
 export function getApiToken(): string | null {
   if (token === null) {
     try {
-      token = localStorage.getItem(TOKEN_KEY)
+      const sessionVal = sessionStorage.getItem(TOKEN_KEY)
+      if (sessionVal) {
+        token = sessionVal
+      } else if (localStorage.getItem(REMEMBER_KEY) === '1') {
+        token = localStorage.getItem(TOKEN_KEY)
+      } else {
+        token = null
+      }
     } catch {
       token = null
     }
@@ -90,11 +111,11 @@ export async function apiFetch(
   return { ok: response.ok, status: response.status, body }
 }
 
-function readSession(res: ApiResult): { user: AuthUser; token: string } {
+function readSession(res: ApiResult, rememberMe = false): { user: AuthUser; token: string } {
   if (res.ok) {
     const body = res.body as { user?: AuthUser; token?: string } | null
     if (body?.user && typeof body.token === 'string' && body.token) {
-      setApiToken(body.token)
+      setApiToken(body.token, rememberMe)
       return { user: body.user, token: body.token }
     }
     throw new ApiError('The server returned an unexpected response.', res.status)
@@ -112,26 +133,28 @@ export async function registerAccount(
   name: string,
   email: string,
   password: string,
+  rememberMe = false,
 ): Promise<{ user: AuthUser; token: string }> {
   const res = await apiFetch('/auth/register', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ name, email, password }),
   })
-  return readSession(res)
+  return readSession(res, rememberMe)
 }
 
 /** Sign in with an existing account. Rejects unknown emails / wrong passwords. */
 export async function loginAccount(
   email: string,
   password: string,
+  rememberMe = false,
 ): Promise<{ user: AuthUser; token: string }> {
   const res = await apiFetch('/auth/login', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ email, password }),
   })
-  return readSession(res)
+  return readSession(res, rememberMe)
 }
 
 /**

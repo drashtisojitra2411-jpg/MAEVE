@@ -29,9 +29,9 @@ export default function App() {
     <BrowserRouter>
       <Suspense fallback={<PageLoader />}>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/how-it-helps" element={<HowItHelpsPage />} />
           <Route element={<PublicOnlyRoute />}>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/how-it-helps" element={<HowItHelpsPage />} />
             <Route path="/signin" element={<SignInPage />} />
             <Route path="/register" element={<RegisterPage />} />
           </Route>

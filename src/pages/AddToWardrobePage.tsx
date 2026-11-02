@@ -11,6 +11,7 @@ import {
 import { CAPTURE_STAGES } from '../lib/captureStages'
 import { cn } from '../lib/cn'
 import { uid } from '../lib/uid'
+import { resolveAssetUrl } from '../lib/resolveAssetUrl'
 import { analyzeGarments } from '../services/garmentAnalysisService'
 import { useAuth } from '../lib/auth'
 import { useWardrobe } from '../lib/wardrobe-context'
@@ -99,12 +100,13 @@ export function AddToWardrobePage() {
           setResult(analysis)
           if (hasGarments) {
             setReviews(
-              analysis.garments.map((g, idx) => {
-                const stableId = g.id || `g_${Date.now()}_${idx}`
+              analysis.garments.map((g) => {
+                // Always generate a unique ID for each garment so uploads never collide
+                const uniqueId = uid()
                 return {
                   ...g,
-                  id: stableId,
-                  key: stableId,
+                  id: uniqueId,
+                  key: uniqueId,
                   name: garmentTitle(g as ReviewGarment),
                   accepted: true,
                 }
@@ -151,7 +153,7 @@ export function AddToWardrobePage() {
     const items: WardrobeItem[] = reviews
       .filter((r) => r.accepted)
       .map((r) => ({
-        id: r.id || r.key || uid(),
+        id: (!r.id || r.id.startsWith('cand-')) ? uid() : r.id,
         userId: user.id,
         name: (r.name && r.name.trim()) ? r.name.trim() : garmentTitle(r),
         // Prefer the tight-cropped thumbnail; fall back to the full-canvas isolated
@@ -471,12 +473,12 @@ export function AddToWardrobePage() {
                 <div
                   className="relative aspect-[3/4] overflow-hidden"
                   style={{
-                    background: `linear-gradient(160deg, #faf9f7, ${review.colorHex ?? '#EDE6D9'} 180%)`,
+                    background: `linear-gradient(160deg, var(--maeve-surface), ${review.colorHex ?? 'var(--maeve-raised)'} 180%)`,
                   }}
                 >
                   {(review.thumbnailUrl || review.imageUrl) ? (
                     <img
-                      src={review.thumbnailUrl ?? review.imageUrl}
+                      src={resolveAssetUrl(review.thumbnailUrl ?? review.imageUrl) ?? (review.thumbnailUrl ?? review.imageUrl)}
                       alt={garmentTitle(review)}
                       className="absolute inset-0 h-full w-full object-contain p-3"
                     />
@@ -487,20 +489,31 @@ export function AddToWardrobePage() {
                       </span>
                     </div>
                   )}
-                  {review.needsUserInput && (
+                  {review.needsUserInput ? (
                     <span className="absolute left-2 top-2 bg-amber-200/90 px-2 py-1 text-[8px] uppercase tracking-[0.18em] text-amber-900">
                       Check this piece
                     </span>
-                  )}
+                  ) : review.segmentationQuality === 'good' ? (
+                    <span className="absolute left-2 top-2 border border-accent/40 bg-surface/90 px-2 py-0.5 text-[8px] uppercase tracking-[0.18em] text-accent">
+                      High Quality Cutout
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="mt-4">
                   <p className="font-editorial text-lg text-ink">{garmentTitle(review)}</p>
-                  {typeof review.confidence === 'number' && (
-                    <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-muted">
-                      Model confidence {Math.round(review.confidence * 100)}%
-                    </p>
-                  )}
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    {typeof review.confidence === 'number' && (
+                      <span className="text-[10px] uppercase tracking-[0.18em] text-muted">
+                        Confidence {Math.round(review.confidence * 100)}%
+                      </span>
+                    )}
+                    {review.segmentationQuality && (
+                      <span className="text-[10px] uppercase tracking-[0.18em] text-muted">
+                        • Quality: {review.segmentationQuality}
+                      </span>
+                    )}
+                  </div>
                   {review.touched ? (
                     <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-accent">
                       Edited by you
@@ -508,7 +521,9 @@ export function AddToWardrobePage() {
                   ) : (
                     review.needsUserInput && (
                       <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-amber-700">
-                        {review.subcategory?.includes('outwear')
+                        {review.qualityIssues && review.qualityIssues.length > 0
+                          ? `Review: ${review.qualityIssues.join(', ')}`
+                          : review.subcategory?.includes('outwear')
                           ? 'Model suggested a layer — please confirm the category'
                           : "The model wasn't certain — please confirm"}
                       </p>

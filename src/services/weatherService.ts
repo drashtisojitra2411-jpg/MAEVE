@@ -23,6 +23,8 @@ const GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search'
 const REVERSE_GEOCODING_URL =
   'https://api.bigdatacloud.net/data/reverse-geocode-client'
 
+const API_BASE = (import.meta.env?.VITE_API_URL || '').replace(/\/$/, '')
+
 const CURRENT_FIELDS = [
   'temperature_2m',
   'apparent_temperature',
@@ -151,13 +153,12 @@ export async function getForecast(
 ): Promise<WeatherData> {
   // First try backend weather proxy with server-side caching and normalization
   try {
-    const res = await fetch(
-      `/api/weather?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}`,
-      {
-        credentials: 'omit',
-        headers: { accept: 'application/json' },
-      },
-    )
+    const weatherPath = `/api/weather?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}`
+    const targetUrl = API_BASE ? `${API_BASE}${weatherPath}` : weatherPath
+    const res = await fetch(targetUrl, {
+      credentials: 'omit',
+      headers: { accept: 'application/json' },
+    })
     if (res.ok) {
       const json = await res.json()
       if (json?.success && json?.weather) {
@@ -197,7 +198,9 @@ export async function searchLocations(query: string): Promise<WeatherLocation[]>
 
   // Try backend proxy first
   try {
-    const res = await fetch(`/api/weather/search?q=${encodeURIComponent(trimmed)}`, {
+    const searchPath = `/api/weather/search?q=${encodeURIComponent(trimmed)}`
+    const targetUrl = API_BASE ? `${API_BASE}${searchPath}` : searchPath
+    const res = await fetch(targetUrl, {
       credentials: 'omit',
       headers: { accept: 'application/json' },
     })

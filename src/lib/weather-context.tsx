@@ -5,6 +5,7 @@ import {
   searchLocations as searchLocationsService,
 } from '../services/weatherService'
 import { getProfile, putProfile } from '../services/looksApi'
+import { getApiToken } from '../services/apiClient'
 import { isWeatherStale, WEATHER_FRESH_MS } from './weather'
 import type { WeatherData, WeatherLocation } from './weather'
 
@@ -226,26 +227,30 @@ export function WeatherProvider({ children }: { children: React.ReactNode }) {
     // No location on this device yet — ask the backend for the one saved on
     // the user's profile before falling back to device geolocation.
     if (!startingLocation) {
-      try {
-        const profile = await getProfile()
-        const p = profile?.location
-        if (p && Number.isFinite(p.latitude) && Number.isFinite(p.longitude)) {
-          startingLocation = {
-            name: p.name,
-            region: p.region ?? '',
-            country: p.country ?? '',
-            latitude: p.latitude,
-            longitude: p.longitude,
+      if (getApiToken()) {
+        try {
+          const profile = await getProfile()
+          const p = profile?.location
+          if (p && Number.isFinite(p.latitude) && Number.isFinite(p.longitude)) {
+            startingLocation = {
+              name: p.name,
+              region: p.region ?? '',
+              country: p.country ?? '',
+              latitude: p.latitude,
+              longitude: p.longitude,
+            }
+            persistSavedLocation(startingLocation)
           }
-          persistSavedLocation(startingLocation)
+        } catch {
+          /* service unreachable */
         }
-      } catch {
-        /* service unreachable — geolocate instead */
       }
     }
 
     if (!startingLocation) {
-      attemptGeolocation()
+      // Do not block initial public load with an intrusive browser geolocation prompt.
+      // Leave status ready; geolocation will be requested when user visits Studio or clicks Enable Location.
+      setStatus('ready')
       return
     }
     if (cached && (!saved || cached.location.latitude === startingLocation.latitude)) {
@@ -266,7 +271,7 @@ export function WeatherProvider({ children }: { children: React.ReactNode }) {
     setLocation(startingLocation)
     locationRef.current = startingLocation
     await fetchWeather(startingLocation, 'replace')
-  }, [attemptGeolocation, fetchWeather, scheduleStaleRefresh, updateData])
+  }, [fetchWeather, scheduleStaleRefresh, updateData])
 
   useEffect(() => {
     if (booted.current) return

@@ -1,0 +1,263 @@
+{
+  "resInvalid": {
+    "accepted": false,
+    "status": 415,
+    "code": "UNSUPPORTED_FILE",
+    "message": "Only JPEG, PNG or WEBP photographs are accepted.",
+    "uploadMs": 21
+  },
+  "resTiny": {
+    "accepted": true,
+    "status": 201,
+    "jobId": "e20931e997dc6247c00fd89a",
+    "jobStatus": "failed",
+    "result": null,
+    "uploadMs": 41,
+    "processingMs": 14675,
+    "totalMs": 14716
+  },
+  "resBed": {
+    "accepted": true,
+    "status": 201,
+    "jobId": "cbd07fc807736574e06262d8",
+    "jobStatus": "complete",
+    "result": {
+      "success": true,
+      "model": "yolov8s-seg-deepfashion2",
+      "processedInMs": 10486,
+      "image": {
+        "width": 800,
+        "height": 1200
+      },
+      "garments": []
+    },
+    "uploadMs": 65,
+    "processingMs": 10486,
+    "totalMs": 12962
+  },
+  "resFlat": {
+    "accepted": true,
+    "status": 201,
+    "jobId": "86472d4725dfaefda4aed807",
+    "jobStatus": "complete",
+    "result": {
+      "success": true,
+      "model": "yolov8s-seg-deepfashion2",
+      "processedInMs": 8283,
+      "image": {
+        "width": 800,
+        "height": 1000
+      },
+      "garments": [
+        {
+          "id": "cand-1793603838523-0-73c57c",
+          "name": "Cream Embroidered Top",
+          "subcategory": "long_sleeved_outwear",
+          "category": "tops",
+          "color": "cream",
+          "colorHex": "#DEC5B9",
+          "secondaryColor": null,
+          "colorConfidence": 0.56,
+          "pattern": "floral",
+          "style": null,
+          "material": null,
+          "sleeve": "long",
+          "length": null,
+          "season": null,
+          "confidence": 0.7231,
+          "boundingBox": {
+            "x": 0.101,
+            "y": 0.0718,
+            "width": 0.8891,
+            "height": 0.8816
+          },
+          "segmentationQuality": "good",
+          "qualityIssues": [],
+          "needsUserInput": true,
+          "isolatedImageUrl": "/api/files/cveval_1793603801890%40maeve.fashion/86472d4725dfaefda4aed807/isolated-0-73c57c.png?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8",
+          "thumbnailUrl": "/api/files/cveval_1793603801890%40maeve.fashion/86472d4725dfaefda4aed807/thumbnail-0-73c57c.png?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8",
+          "originalImageUrl": "/api/files/cveval_1793603801890%40maeve.fashion/86472d4725dfaefda4aed807/original.jpg?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8"
+        }
+      ]
+    },
+    "uploadMs": 17,
+    "processingMs": 8283,
+    "totalMs": 9821
+  },
+  "resMulti": {
+    "accepted": true,
+    "status": 201,
+    "jobId": "1b809371e0f242660f74de55",
+    "jobStatus": "complete",
+    "result": {
+      "success": true,
+      "model": "yolov8s-seg-deepfashion2",
+      "processedInMs": 10863,
+      "image": {
+        "width": 800,
+        "height": 800
+      },
+      "garments": [
+        {
+          "id": "cand-1793603850260-0-b442a3",
+          "name": "Navy Embroidered Vest",
+          "subcategory": "vest",
+          "category": "tops",
+          "color": "navy",
+          "colorHex": "#1F1D2A",
+          "secondaryColor": null,
+          "colorConfidence": 0.88,
+          "pattern": "floral",
+          "style": null,
+          "material": null,
+          "sleeve": null,
+          "length": null,
+          "season": null,
+          "confidence": 0.4606,
+          "boundingBox": {
+            "x": 0.1797,
+            "y": 0.0903,
+            "width": 0.5348,
+            "height": 0.85
+          },
+          "segmentationQuality": "good",
+          "qualityIssues": [],
+          "needsUserInput": true,
+          "isolatedImageUrl": "/api/files/cveval_1793603801890%40maeve.fashion/1b809371e0f242660f74de55/isolated-0-b442a3.png?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8",
+          "thumbnailUrl": "/api/files/cveval_1793603801890%40maeve.fashion/1b809371e0f242660f74de55/thumbnail-0-b442a3.png?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8",
+          "originalImageUrl": "/api/files/cveval_1793603801890%40maeve.fashion/1b809371e0f242660f74de55/original.jpg?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8"
+        },
+        {
+          "id": "cand-1793603851052-1-a2f4af",
+          "name": "Navy Embroidered Shirt",
+          "subcategory": "short_sleeved_shirt",
+          "category": "shirt",
+          "color": "navy",
+          "colorHex": "#1F1D2A",
+          "secondaryColor": null,
+          "colorConfidence": 0.88,
+          "pattern": "floral",
+          "style": null,
+          "material": null,
+          "sleeve": "short",
+          "length": null,
+          "season": null,
+          "confidence": 0.3803,
+          "boundingBox": {
+            "x": 0.1702,
+            "y": 0.0965,
+            "width": 0.5481,
+            "height": 0.8863
+          },
+          "segmentationQuality": "good",
+          "qualityIssues": [],
+          "needsUserInput": true,
+          "isolatedImageUrl": "/api/files/cveval_1793603801890%40maeve.fashion/1b809371e0f242660f74de55/isolated-1-a2f4af.png?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8",
+          "thumbnailUrl": "/api/files/cveval_1793603801890%40maeve.fashion/1b809371e0f242660f74de55/thumbnail-1-a2f4af.png?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8",
+          "originalImageUrl": "/api/files/cveval_1793603801890%40maeve.fashion/1b809371e0f242660f74de55/original.jpg?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8"
+        }
+      ]
+    },
+    "uploadMs": 17,
+    "processingMs": 10863,
+    "totalMs": 12917
+  },
+  "resShirt": {
+    "accepted": true,
+    "status": 201,
+    "jobId": "f3e0c04b3a50a32d40851f39",
+    "jobStatus": "complete",
+    "result": {
+      "success": true,
+      "model": "yolov8s-seg-deepfashion2",
+      "processedInMs": 18820,
+      "image": {
+        "width": 896,
+        "height": 1200
+      },
+      "garments": [
+        {
+          "id": "cand-1793603873154-0-e87d1f",
+          "name": "White Shirt",
+          "subcategory": "long_sleeved_shirt",
+          "category": "shirt",
+          "color": "white",
+          "colorHex": "#E3E1E3",
+          "secondaryColor": null,
+          "colorConfidence": 0.89,
+          "pattern": "solid",
+          "style": null,
+          "material": null,
+          "sleeve": "long",
+          "length": null,
+          "season": null,
+          "confidence": 0.6818,
+          "boundingBox": {
+            "x": 0.21,
+            "y": 0.1674,
+            "width": 0.5857,
+            "height": 0.6537
+          },
+          "segmentationQuality": "good",
+          "qualityIssues": [],
+          "needsUserInput": false,
+          "isolatedImageUrl": "/api/files/cveval_1793603801890%40maeve.fashion/f3e0c04b3a50a32d40851f39/isolated-0-e87d1f.png?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8",
+          "thumbnailUrl": "/api/files/cveval_1793603801890%40maeve.fashion/f3e0c04b3a50a32d40851f39/thumbnail-0-e87d1f.png?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8",
+          "originalImageUrl": "/api/files/cveval_1793603801890%40maeve.fashion/f3e0c04b3a50a32d40851f39/original.jpg?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8"
+        }
+      ]
+    },
+    "uploadMs": 212,
+    "processingMs": 18820,
+    "totalMs": 22495
+  },
+  "resDup": {
+    "accepted": true,
+    "status": 201,
+    "jobId": "48caba18f26549b68c40a94e",
+    "jobStatus": "complete",
+    "result": {
+      "success": true,
+      "model": "yolov8s-seg-deepfashion2",
+      "processedInMs": 13635,
+      "image": {
+        "width": 896,
+        "height": 1200
+      },
+      "garments": [
+        {
+          "id": "cand-1793603890500-0-44d238",
+          "name": "White Shirt",
+          "subcategory": "long_sleeved_shirt",
+          "category": "shirt",
+          "color": "white",
+          "colorHex": "#E3E1E3",
+          "secondaryColor": null,
+          "colorConfidence": 0.89,
+          "pattern": "solid",
+          "style": null,
+          "material": null,
+          "sleeve": "long",
+          "length": null,
+          "season": null,
+          "confidence": 0.6818,
+          "boundingBox": {
+            "x": 0.21,
+            "y": 0.1674,
+            "width": 0.5857,
+            "height": 0.6537
+          },
+          "segmentationQuality": "good",
+          "qualityIssues": [],
+          "needsUserInput": false,
+          "isolatedImageUrl": "/api/files/cveval_1793603801890%40maeve.fashion/48caba18f26549b68c40a94e/isolated-0-44d238.png?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8",
+          "thumbnailUrl": "/api/files/cveval_1793603801890%40maeve.fashion/48caba18f26549b68c40a94e/thumbnail-0-44d238.png?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8",
+          "originalImageUrl": "/api/files/cveval_1793603801890%40maeve.fashion/48caba18f26549b68c40a94e/original.jpg?token=MAhwk-GGky4w7CC3adXAAKCtq7dEiWIrXS-AzZS5kX8"
+        }
+      ]
+    },
+    "uploadMs": 157,
+    "processingMs": 13635,
+    "totalMs": 16718
+  }
+}

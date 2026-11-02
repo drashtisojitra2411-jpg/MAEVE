@@ -1,0 +1,117 @@
+{
+  "crudTestsPassed": 7,
+  "crudTestsTotal": 7,
+  "weatherTestsPassed": 3,
+  "weatherTestsTotal": 3,
+  "scenariosTested": 10,
+  "acceptableRecommendations": 10,
+  "recSuccessRate": 100,
+  "scenarioDetails": [
+    {
+      "scenario": "Hot weather + casual occasion",
+      "occasion": "casual",
+      "temp": 32,
+      "recGenerated": true,
+      "garmentsSelected": 2,
+      "score": 77,
+      "recTimeMs": 2.49,
+      "isAcceptable": true
+    },
+    {
+      "scenario": "Hot weather + formal occasion",
+      "occasion": "formal",
+      "temp": 32,
+      "recGenerated": true,
+      "garmentsSelected": 2,
+      "score": 77,
+      "recTimeMs": 0.23,
+      "isAcceptable": true
+    },
+    {
+      "scenario": "Cold weather + casual occasion",
+      "occasion": "casual",
+      "temp": 4,
+      "recGenerated": true,
+      "garmentsSelected": 2,
+      "score": 77,
+      "recTimeMs": 0.2,
+      "isAcceptable": true
+    },
+    {
+      "scenario": "Rainy weather",
+      "occasion": "casual",
+      "temp": 14,
+      "recGenerated": true,
+      "garmentsSelected": 2,
+      "score": 77,
+      "recTimeMs": 0.14,
+      "isAcceptable": true
+    },
+    {
+      "scenario": "High humidity",
+      "occasion": "casual",
+      "temp": 28,
+      "recGenerated": true,
+      "garmentsSelected": 2,
+      "score": 77,
+      "recTimeMs": 0.1,
+      "isAcceptable": true
+    },
+    {
+      "scenario": "Low humidity / dry weather",
+      "occasion": "casual",
+      "temp": 22,
+      "recGenerated": true,
+      "garmentsSelected": 2,
+      "score": 77,
+      "recTimeMs": 0.1,
+      "isAcceptable": true
+    },
+    {
+      "scenario": "Traditional occasion",
+      "occasion": "traditional",
+      "temp": 25,
+      "recGenerated": true,
+      "garmentsSelected": 2,
+      "score": 77,
+      "recTimeMs": 0.1,
+      "isAcceptable": true
+    },
+    {
+      "scenario": "Formal business occasion",
+      "occasion": "formal",
+      "temp": 20,
+      "recGenerated": true,
+      "garmentsSelected": 2,
+      "score": 77,
+      "recTimeMs": 0.1,
+      "isAcceptable": true
+    },
+    {
+      "scenario": "Party / Evening event",
+      "occasion": "party",
+      "temp": 19,
+      "recGenerated": true,
+      "garmentsSelected": 2,
+      "score": 77,
+      "recTimeMs": 0.11,
+      "isAcceptable": true
+    },
+    {
+      "scenario": "Everyday / Casual use",
+      "occasion": "everyday",
+      "temp": 21,
+      "recGenerated": true,
+      "garmentsSelected": 2,
+      "score": 77,
+      "recTimeMs": 0.1,
+      "isAcceptable": true
+    }
+  ],
+  "e2eDurationMs": 248.95,
+  "performanceMetrics": {
+    "avgDbOperationMs": 6.81,
+    "avgRecommendationMs": 0.37,
+    "avgWeatherApiMs": 784.94
+  }
+}

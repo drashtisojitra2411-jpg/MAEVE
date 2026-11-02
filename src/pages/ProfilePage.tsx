@@ -498,13 +498,14 @@ export function ProfilePage() {
                       type="button"
                       onClick={() => toggleStyle(st.id)}
                       className={cn(
-                        'px-3.5 py-1.5 text-[10px] uppercase tracking-[0.2em] transition-all border',
-                        selected
-                          ? 'border-accent bg-accent text-espresso font-medium shadow-sm'
-                          : 'border-line bg-sand/20 text-muted hover:text-ink hover:border-line-strong',
+                        'pref-chip',
+                        selected && 'pref-chip-active',
                       )}
                     >
-                      {st.label}
+                      {selected && (
+                        <Check className="h-2.5 w-2.5 text-accent stroke-[2.5] -ml-0.5" />
+                      )}
+                      <span>{st.label}</span>
                     </button>
                   )
                 })}
@@ -525,13 +526,18 @@ export function ProfilePage() {
                       type="button"
                       onClick={() => setFormality(f.id as any)}
                       className={cn(
-                        'p-3 text-left border transition-all',
-                        selected
-                          ? 'border-accent bg-accent/10 text-ink shadow-sm'
-                          : 'border-line bg-sand/10 text-muted hover:text-ink',
+                        'pref-card',
+                        selected && 'pref-card-active',
                       )}
                     >
-                      <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-ink">{f.label}</p>
+                      <div className="flex items-center justify-between">
+                        <p className={cn('text-[10px] uppercase tracking-[0.2em] font-medium text-ink', selected && 'font-semibold')}>
+                          {f.label}
+                        </p>
+                        {selected && (
+                          <Check className="h-3 w-3 text-accent stroke-[2.5] flex-shrink-0" />
+                        )}
+                      </div>
                     </button>
                   )
                 })}
@@ -557,8 +563,8 @@ export function ProfilePage() {
                         className={cn(
                           'flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.16em] border transition-all',
                           isFav
-                            ? 'border-accent bg-accent/15 text-ink font-medium ring-1 ring-accent'
-                            : 'border-line bg-sand/10 text-muted hover:text-ink',
+                            ? 'border-accent bg-accent-soft text-ink font-medium shadow-[inset_0_0_0_1px_var(--maeve-accent)]'
+                            : 'border-line bg-card text-muted hover:text-ink',
                         )}
                       >
                         <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: c.hex }} />
@@ -586,8 +592,8 @@ export function ProfilePage() {
                         className={cn(
                           'flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.16em] border transition-all',
                           isAvoided
-                            ? 'border-red-500/60 bg-red-950/20 text-red-400 font-medium'
-                            : 'border-line bg-sand/10 text-muted hover:text-ink',
+                            ? 'border-red-500/60 bg-red-950/20 text-red-500 font-medium'
+                            : 'border-line bg-card text-muted hover:text-ink',
                         )}
                       >
                         <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: c.hex }} />
@@ -613,13 +619,14 @@ export function ProfilePage() {
                       type="button"
                       onClick={() => toggleComfortPref(opt)}
                       className={cn(
-                        'px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] transition-all border',
-                        selected
-                          ? 'border-accent bg-accent text-espresso font-medium shadow-sm'
-                          : 'border-line bg-sand/20 text-muted hover:text-ink',
+                        'pref-chip',
+                        selected && 'pref-chip-active',
                       )}
                     >
-                      {opt}
+                      {selected && (
+                        <Check className="h-2.5 w-2.5 text-accent stroke-[2.5] -ml-0.5" />
+                      )}
+                      <span>{opt}</span>
                     </button>
                   )
                 })}
@@ -640,13 +647,14 @@ export function ProfilePage() {
                       type="button"
                       onClick={() => toggleOccasionPref(occ)}
                       className={cn(
-                        'px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] transition-all border',
-                        selected
-                          ? 'border-accent bg-accent/20 text-ink font-medium border-accent'
-                          : 'border-line bg-sand/20 text-muted hover:text-ink',
+                        'pref-chip',
+                        selected && 'pref-chip-active',
                       )}
                     >
-                      {occ}
+                      {selected && (
+                        <Check className="h-2.5 w-2.5 text-accent stroke-[2.5] -ml-0.5" />
+                      )}
+                      <span>{occ}</span>
                     </button>
                   )
                 })}

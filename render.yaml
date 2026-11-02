@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: maeve-backend
+    runtime: docker
+    plan: starter
+    region: oregon
+    healthCheckPath: /api/health
+    disk:
+      name: maeve-data
+      mountPath: /app/server/data
+      sizeGB: 10
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8787
+      - key: MAEVE_SESSION_SECRET
+        generateValue: true
+      - key: MAEVE_DATA_DIR
+        value: /app/server/data
+      - key: MAEVE_DB
+        value: /app/server/data/maeve.db
+      - key: MAEVE_CORS_ORIGIN
+        sync: false
+      - key: MAEVE_RATE_LIMIT
+        value: "1"
+      - key: TRUST_PROXY
+        value: "1"
+

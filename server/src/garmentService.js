@@ -116,6 +116,7 @@ function finishJob(job, token) {
   if (payload.success) {
     const garments = payload.garments.map((g) => ({
       id: g.id,
+      name: g.name || null,
       subcategory: g.subcategory,
       category: g.category,
       color: g.color,
@@ -130,6 +131,8 @@ function finishJob(job, token) {
       season: g.season,
       confidence: g.confidence,
       boundingBox: g.boundingBox,
+      segmentationQuality: g.segmentationQuality || 'good',
+      qualityIssues: g.qualityIssues || [],
       // The worker flags ambiguous taxonomy (e.g. DF2 `*_outwear`, which is not
       // necessarily a layer). Low detection confidence is folded in here too.
       needsUserInput:

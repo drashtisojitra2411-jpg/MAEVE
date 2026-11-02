@@ -43,6 +43,7 @@ import logging
 import os
 import sys
 import time
+import uuid
 
 import numpy as np
 from PIL import Image, ImageFilter, ImageOps
@@ -76,6 +77,13 @@ DF2_CATEGORY_MAP = {
     "long_sleeved_dress": "dresses",
     "vest_dress": "dresses",
     "sling_dress": "dresses",
+    "kurta": "traditional",
+    "kurti": "traditional",
+    "salwar_suit": "traditional",
+    "dupatta": "traditional",
+    "saree": "traditional",
+    "lehenga": "traditional",
+    "chaniya_choli": "traditional",
 }
 
 # DF2 classes whose raw name cannot be resolved to a single MAEVE category by
@@ -87,7 +95,8 @@ DF2_AMBIGUOUS = {
 
 SLEEVE_MAP = {"short_sleeved_shirt": "short", "short_sleeved_outwear": "short",
               "short_sleeved_dress": "short", "long_sleeved_shirt": "long",
-              "long_sleeved_outwear": "long", "long_sleeved_dress": "long"}
+              "long_sleeved_outwear": "long", "long_sleeved_dress": "long",
+              "kurta": "long"}
 
 # Real pixel-derived color naming (computed from the image, not invented).
 
@@ -165,38 +174,142 @@ def load_image(path: str) -> tuple[Image.Image, dict]:
     return img, {"width": img.size[0], "height": img.size[1]}
 
 
-def mask_to_alpha(mask_array: np.ndarray, ih: int, iw: int) -> np.ndarray:
-    """Resize raw mask to image size, filter noise specks, bridge occlusions, and soft-feather edges."""
+def detect_skin_and_hair(base_bgr: np.ndarray, is_dark_garment: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    """Segment visible human skin and dark hair to isolate pure garment pixels."""
+    import cv2
+    hsv = cv2.cvtColor(base_bgr, cv2.COLOR_BGR2HSV)
+    ycrcb = cv2.cvtColor(base_bgr, cv2.COLOR_BGR2YCrCb)
+
+    skin_ycrcb = (ycrcb[:, :, 1] >= 133) & (ycrcb[:, :, 1] <= 175) & (ycrcb[:, :, 2] >= 77) & (ycrcb[:, :, 2] <= 128)
+    skin_hsv = ((hsv[:, :, 0] <= 25) | (hsv[:, :, 0] >= 165)) & (hsv[:, :, 1] >= 20) & (hsv[:, :, 1] <= 170)
+    skin = skin_ycrcb & skin_hsv
+
+    if is_dark_garment:
+        hair = np.zeros_like(skin, dtype=bool)
+    else:
+        hair = (hsv[:, :, 2] < 50)
+
+    return skin, hair
+
+
+def refine_mask_to_alpha(mask_array: np.ndarray, ih: int, iw: int,
+                         base: np.ndarray | None = None,
+                         subcategory: str | None = None) -> tuple[np.ndarray, dict]:
+    """Resize raw mask to image size, remove skin & hair, bridge occlusions, recover fabric continuity, and soft-feather edges."""
     m = mask_array.squeeze(0)  # (mh, mw)
     mimg = Image.fromarray((m * 255).astype(np.uint8)).resize(
         (iw, ih), Image.Resampling.BILINEAR,
     )
     raw_alpha = np.asarray(mimg).astype(np.uint8)
 
+    quality_meta = {
+        "quality": "good",
+        "issues": [],
+        "skinHairRemoved": 0,
+        "pixelCount": 0,
+    }
+
     try:
         import cv2
-        # Filter out tiny disconnected noise specks (< 5% of largest component)
         bin_mask = (raw_alpha > 38).astype(np.uint8)
-        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(bin_mask)
-        if num_labels > 2:
-            max_area = max(stats[1:, cv2.CC_STAT_AREA])
-            clean_mask = np.zeros_like(raw_alpha)
-            for i in range(1, num_labels):
-                if stats[i, cv2.CC_STAT_AREA] >= max_area * 0.05:
-                    clean_mask[labels == i] = raw_alpha[labels == i]
-        else:
-            clean_mask = raw_alpha
+        if base is not None:
+            base_bgr = cv2.cvtColor(base, cv2.COLOR_RGB2BGR)
+            hsv = cv2.cvtColor(base_bgr, cv2.COLOR_BGR2HSV)
+            raw_px_hsv = hsv[bin_mask > 0]
+            is_dark = False
+            if len(raw_px_hsv) > 50:
+                med_v = float(np.median(raw_px_hsv[:, 2]))
+                if med_v < 55.0:
+                    is_dark = True
 
-        # Morphological closing to bridge small occlusions (hair, thin straps)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        closed = cv2.morphologyEx(clean_mask, cv2.MORPH_CLOSE, kernel)
-        feathered = cv2.GaussianBlur(closed, (3, 3), 1.0)
-        alpha = feathered.astype(np.float32) / 255.0
+            skin, hair = detect_skin_and_hair(base_bgr, is_dark_garment=is_dark)
+
+            # Safeguard: if over 35% of the garment mask matches the skin spectrum,
+            # the garment itself is beige, nude, camel, or tan fabric — not bare skin!
+            mask_px_count = max(1, int(np.count_nonzero(bin_mask > 0)))
+            skin_px_count = int(np.count_nonzero((bin_mask > 0) & skin))
+            if skin_px_count / mask_px_count > 0.35:
+                skin = np.zeros_like(skin)
+
+            core = (bin_mask > 0) & ~skin & ~hair
+            quality_meta["skinHairRemoved"] = int(np.count_nonzero((bin_mask > 0) & (skin | hair)))
+
+            if np.count_nonzero(core) >= 100:
+                # Saturated non-dark garments: expand fabric continuity to recover drapes/hems (e.g. kurta flare)
+                ghsv = hsv[core]
+                med_s = float(np.median(ghsv[:, 1]))
+                if med_s >= 50.0 and not is_dark:
+                    h_low, h_high = np.percentile(ghsv[:, 0], [2, 98])
+                    s_low, s_high = np.percentile(ghsv[:, 1], [2, 98])
+                    v_low, v_high = np.percentile(ghsv[:, 2], [2, 98])
+
+                    matching = (
+                        (hsv[:, :, 0] >= max(5, h_low - 10)) & (hsv[:, :, 0] <= min(175, h_high + 10)) &
+                        (hsv[:, :, 1] >= max(25, s_low - 35)) &
+                        (hsv[:, :, 2] >= max(25, v_low - 35))
+                    )
+                    combined = (matching | core).astype(np.uint8)
+                    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(combined)
+                    refined = np.zeros((ih, iw), dtype=bool)
+                    for lbl in range(1, num_labels):
+                        if np.count_nonzero((labels == lbl) & core) > 300:
+                            refined |= (labels == lbl)
+                else:
+                    refined = core.copy()
+            else:
+                refined = (bin_mask > 0)
+
+            # Strictly remove skin & hair
+            refined &= ~skin
+            refined &= ~hair
+
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+            closed = cv2.morphologyEx(refined.astype(np.uint8), cv2.MORPH_CLOSE, kernel)
+            feathered = cv2.GaussianBlur(closed * 255, (3, 3), 1.0)
+            alpha = (feathered.astype(np.float32) / 255.0).clip(0.0, 1.0)
+        else:
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+            closed = cv2.morphologyEx(bin_mask, cv2.MORPH_CLOSE, kernel)
+            feathered = cv2.GaussianBlur(closed * 255, (3, 3), 1.0)
+            alpha = (feathered.astype(np.float32) / 255.0).clip(0.0, 1.0)
+
+        # Quality validation
+        non_zero = int(np.count_nonzero(alpha > 0.15))
+        quality_meta["pixelCount"] = non_zero
+        issues = []
+        if non_zero < 1000:
+            issues.append("Small garment area")
+
+        ys, xs = np.where(alpha > 0.15)
+        if len(ys) > 0 and len(xs) > 0:
+            box_area = (ys.max() - ys.min() + 1) * (xs.max() - xs.min() + 1)
+            fill_ratio = non_zero / max(1, box_area)
+            if fill_ratio < 0.20:
+                issues.append("Low mask density")
+        else:
+            issues.append("Empty garment mask")
+
+        quality = "good"
+        if len(issues) == 1:
+            quality = "acceptable"
+        elif len(issues) >= 2:
+            quality = "poor"
+
+        quality_meta["quality"] = quality
+        quality_meta["issues"] = issues
+
     except Exception:
         mimg = mimg.filter(ImageFilter.GaussianBlur(radius=2))
         alpha = np.asarray(mimg).astype(np.float32) / 255.0
+        alpha = np.clip(alpha, 0.0, 1.0)
 
-    return np.clip(alpha, 0.0, 1.0)
+    return alpha, quality_meta
+
+
+def mask_to_alpha(mask_array: np.ndarray, ih: int, iw: int) -> np.ndarray:
+    """Resize raw mask to image size, filter noise specks, bridge occlusions, and soft-feather edges."""
+    alpha, _ = refine_mask_to_alpha(mask_array, ih, iw)
+    return alpha
 
 
 def isolate_garment(base: np.ndarray, alpha: np.ndarray, out_png: str) -> None:
@@ -378,6 +491,23 @@ def classify_colour(rgb) -> tuple[str, float]:
             # green/yellow soft tints are not a neutral — use the palette
             return nearest_colour_name(rgb), 0.60
         return name, _bucket_conf(v, bounds, s, TINT_MAX_SAT)
+    # Chromatic fashion palette:
+    # Direct hue calibration to avoid Euclidean distortion between distinct chromatic families
+    if 36.0 <= h <= 56.0 and s >= 0.35:
+        return "mustard yellow", 0.92
+    if 56.0 < h <= 70.0 and s >= 0.35:
+        return "yellow", 0.88
+    if 15.0 <= h < 36.0 and s >= 0.35:
+        return ("rust" if v < 0.60 else "orange"), 0.86
+    if (h < 15.0 or h >= 345.0) and s >= 0.35:
+        return ("burgundy" if v < 0.45 else "red"), 0.88
+    if 70.0 < h <= 165.0 and s >= 0.25:
+        return ("olive" if v < 0.50 else "green"), 0.85
+    if 165.0 < h <= 260.0 and s >= 0.25:
+        return ("navy" if v < 0.38 else "blue"), 0.88
+    if 260.0 < h < 345.0 and s >= 0.25:
+        return ("plum" if v < 0.48 else "purple"), 0.85
+
     return nearest_colour_name(rgb), 0.82
 
 
@@ -420,7 +550,7 @@ def _secondary_colour(px_rgb: np.ndarray, primary_name: str):
 
 
 def reading_details(image: np.ndarray, alpha: np.ndarray,
-                    subcategory: str) -> dict:
+                    subcategory: str, xyxy: list[float] | None = None) -> dict:
     log("reading-details")
     # Sample only the *interior* of the segmentation mask: the alpha ramp at the
     # mask edge blends garment with background, so a high threshold keeps the
@@ -431,8 +561,11 @@ def reading_details(image: np.ndarray, alpha: np.ndarray,
     if len(px) < 50:
         mask = alpha > 0.5
         px = image[mask]
+    H, W = image.shape[:2]
     base = {
+        "name": None,
         "category": df2_category(subcategory),
+        "subcategory": subcategory,
         "color": None, "colorHex": None, "secondaryColor": None,
         "colorConfidence": None, "pattern": None, "sleeve": SLEEVE_MAP.get(subcategory),
         "length": "short" if subcategory == "shorts" else None,
@@ -447,25 +580,326 @@ def reading_details(image: np.ndarray, alpha: np.ndarray,
     colorHex = "#%02X%02X%02X" % tuple(int(round(c)) for c in median_rgb)
     primary, color_conf = classify_colour(tuple(median_rgb))
     secondary = _secondary_colour(px_rgb, primary)
-    # pattern → only 'solid' when the real masked pixels are statistically flat
-    grey = (0.299 * px_rgb[..., 0] + 0.587 * px_rgb[..., 1] +
-            0.114 * px_rgb[..., 2])
-    sigma = float(grey.std())
-    pattern = "solid" if sigma < 13.0 else None  # else: unknown, do not guess
+
+    # Pattern reading: evaluate interior texture and edge density
+    pattern = "solid"
+    pattern_title = ""
+    try:
+        import cv2
+        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        canny = cv2.Canny(gray, 60, 160)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+        eroded_mask = cv2.erode((alpha > 0.80).astype(np.uint8), kernel) > 0
+        eval_mask = eroded_mask if np.count_nonzero(eroded_mask) > 100 else (alpha > 0.80)
+        edge_density = float(np.count_nonzero(canny[eval_mask])) / max(1, np.count_nonzero(eval_mask))
+        grey_pixels = (0.299 * px_rgb[..., 0] + 0.587 * px_rgb[..., 1] + 0.114 * px_rgb[..., 2])
+        sigma = float(grey_pixels.std())
+
+        if (edge_density >= 0.020 and sigma >= 20.0) or (edge_density >= 0.035):
+            pattern = "floral"
+            pattern_title = "Embroidered "
+        elif edge_density < 0.020 and sigma < 16.0:
+            pattern = "solid"
+        else:
+            pattern = "textured"
+    except Exception:
+        grey = (0.299 * px_rgb[..., 0] + 0.587 * px_rgb[..., 1] + 0.114 * px_rgb[..., 2])
+        sigma = float(grey.std())
+        pattern = "solid" if sigma < 13.0 else None
+
+    # Traditional Indian clothing geometry analysis:
+    bbox = alpha_bounding_box(alpha, threshold=0.15)
+    if bbox is not None:
+        y1, x1, y2, x2 = bbox
+    elif xyxy is not None:
+        x1, y1, x2, y2 = [int(v) for v in xyxy]
+    else:
+        y1, y2, x1, x2 = 0, H, 0, W
+
+    h_span = y2 - y1
+    w_span = x2 - x1
+    aspect_ratio = h_span / max(1, w_span)
+    vert_coverage = y2 / float(H)
+
+    category = df2_category(subcategory)
+    resolved_sub = subcategory
+    style = None
+    sleeve = SLEEVE_MAP.get(subcategory)
+
+    if subcategory in ("long_sleeved_outwear", "long_sleeved_shirt"):
+        # Kurta: elongated silhouette extending below waist/hips
+        if aspect_ratio >= 1.40 and vert_coverage > 0.65 and (pattern == "floral" or primary == "mustard yellow"):
+            category = "traditional"
+            resolved_sub = "kurta"
+            style = "ethnic"
+            sleeve = "long"
+        elif aspect_ratio >= 1.30 and vert_coverage > 0.60 and pattern == "floral":
+            category = "traditional"
+            resolved_sub = "kurti"
+            style = "ethnic"
+            sleeve = "long"
+    elif subcategory in ("kurta", "kurti", "salwar_suit", "dupatta", "saree", "lehenga", "chaniya_choli"):
+        category = "traditional"
+        resolved_sub = subcategory
+        style = "ethnic"
+        if subcategory == "kurta":
+            sleeve = "long"
+
+    # Format natural, human garment name:
+    # E.g. "Mustard Yellow Embroidered Kurta", "Black Dress", "Rust Dress"
+    color_title = primary.title()
+    if resolved_sub == "kurta":
+        sub_title = "Kurta"
+    elif resolved_sub == "kurti":
+        sub_title = "Kurti"
+    elif resolved_sub == "dupatta":
+        sub_title = "Dupatta"
+    elif "dress" in resolved_sub:
+        sub_title = "Dress"
+    elif "shirt" in resolved_sub:
+        sub_title = "Shirt"
+    elif "outwear" in resolved_sub:
+        sub_title = "Top"
+    elif resolved_sub == "trousers":
+        sub_title = "Trousers"
+    elif resolved_sub == "skirt":
+        sub_title = "Skirt"
+    else:
+        sub_title = resolved_sub.replace("_", " ").title()
+
+    garment_name = f"{color_title} {pattern_title}{sub_title}".strip()
+
     base.update({
+        "name": garment_name,
+        "category": category,
+        "subcategory": resolved_sub,
+        "style": style,
+        "sleeve": sleeve,
         "color": primary,
         "colorHex": colorHex,
         "secondaryColor": secondary,
         "colorConfidence": color_conf,
         "pattern": pattern,
+        "aspectRatio": round(aspect_ratio, 2),
         # Ambiguous category OR an uncertain colour reading → ask the person.
-        "needsUserInput": base["needsUserInput"] or color_conf < 0.55,
+        "needsUserInput": (resolved_sub in DF2_AMBIGUOUS and category != "traditional") or color_conf < 0.55,
     })
     return base
 
 
 def df2_category(subcategory: str) -> str:
     return DF2_CATEGORY_MAP.get(subcategory, "tops")
+
+
+def calculate_box_overlap(b1: list[float], b2: list[float]) -> tuple[float, float]:
+    """
+    Calculate spatial overlap metrics between two bounding boxes:
+    - IoU (Intersection-over-Union): shared area / total combined area
+    - IoS (Intersection-over-Smaller): shared area / smaller box area
+    """
+    x1 = max(b1[0], b2[0])
+    y1 = max(b1[1], b2[1])
+    x2 = min(b1[2], b2[2])
+    y2 = min(b1[3], b2[3])
+    inter = max(0.0, x2 - x1) * max(0.0, y2 - y1)
+    a1 = max(1.0, (b1[2] - b1[0]) * (b1[3] - b1[1]))
+    a2 = max(1.0, (b2[2] - b2[0]) * (b2[3] - b2[1]))
+    union = a1 + a2 - inter
+    iou = inter / union if union > 0 else 0.0
+    ios = inter / min(a1, a2)
+    return iou, ios
+
+
+def filter_conflicts_and_duplicates(dets: list[dict], base_img: np.ndarray | None = None) -> list[dict]:
+    """
+    Intelligent post-processing to eliminate duplicate or conflicting predictions
+    on the same physical garment while preserving genuine multi-garment outfits.
+
+    Key principles:
+    1. Retain complete dresses / full-body garments:
+       When a complete dress (or traditional one-piece) and overlapping upper-body or
+       lower-body predictions refer to the same physical garment, retain the complete
+       dress and suppress the component predictions (vest, sling, top, shirt, skirt).
+    2. Unify split one-piece dresses:
+       When a single one-piece dress is detected as separate bodice ('vest' or 'sling')
+       and skirt components (same vertical axis, waistline adjacency, high horizontal
+       alignment, continuous aspect ratio, and matching color), unify them into a
+       single 'vest_dress' or 'sling_dress' entry with user confirmation.
+    3. Preserve genuine two-piece separates:
+       Separate garments worn together (e.g. shirt + skirt, top + trousers, garments
+       with different colors or patterns) and side-by-side garments are strictly preserved.
+    4. Suppress same-class duplicates (IoU >= 0.45) and low-confidence shadow predictions.
+    """
+    if len(dets) <= 1:
+        return dets
+
+    H, W = (base_img.shape[:2]) if base_img is not None else (1000, 1000)
+
+    # Pre-identify traditional full garments (e.g. Kurta) by silhouette geometry
+    for d in dets:
+        b = d["xyxy"]
+        ar = (b[3] - b[1]) / max(1.0, (b[2] - b[0]))
+        vc = b[3] / float(H)
+        if d["subcategory"] in ("long_sleeved_outwear", "long_sleeved_shirt") and ar >= 1.40 and vc > 0.70:
+            d["category"] = "traditional"
+
+    # ── Stage 1: Dress vs sub-component suppression ───────────────────
+    # If a complete dress or full-body piece is detected, suppress any overlapping
+    # sub-parts (tops, shirts, bottoms) in the same physical region.
+    dress_indices = [
+        i for i, d in enumerate(dets)
+        if d.get("category") in ("dresses", "traditional") or DF2_CATEGORY_MAP.get(d["subcategory"]) in ("dresses", "traditional")
+    ]
+    suppressed = set()
+    for di in dress_indices:
+        dress = dets[di]
+        for j, other in enumerate(dets):
+            if j == di or j in suppressed:
+                continue
+            other_cat = other.get("category") or DF2_CATEGORY_MAP.get(other["subcategory"], "tops")
+            if other_cat in ("tops", "shirt", "bottoms"):
+                iou, ios = calculate_box_overlap(dress["xyxy"], other["xyxy"])
+                if ios >= 0.50 or iou >= 0.35:
+                    suppressed.add(j)
+
+    stage1_kept = [d for i, d in enumerate(dets) if i not in suppressed]
+    if len(stage1_kept) <= 1:
+        return stage1_kept
+
+    # ── Stage 2: Unify split one-piece dress (bodice + skirt) ─────────
+    # DeepFashion2 can split an unbelted solid dress into 'vest'/'sling' + 'skirt'.
+    # When vertical adjacency, horizontal alignment, continuous aspect ratio,
+    # and matching color confirm it is a single physical garment, merge into one.
+    merged: list[dict] = []
+    used = set()
+    H, W = (base_img.shape[:2]) if base_img is not None else (1000, 1000)
+
+    for i, d1 in enumerate(stage1_kept):
+        if i in used:
+            continue
+        sub1 = d1["subcategory"]
+        # Only sleeveless bodices (vest, sling) are candidates for dress splitting;
+        # structured shirts (short/long_sleeved_shirt) and jackets are real separates.
+        if sub1 not in ("vest", "sling"):
+            continue
+
+        for j, d2 in enumerate(stage1_kept):
+            if j == i or j in used:
+                continue
+            if d2["subcategory"] != "skirt":
+                continue
+
+            b1 = d1["xyxy"]  # top
+            b2 = d2["xyxy"]  # skirt
+            w1 = b1[2] - b1[0]
+            h1 = b1[3] - b1[1]
+            w2 = b2[2] - b2[0]
+            h2 = b2[3] - b2[1]
+
+            # Top must be above bottom
+            if not (b1[1] < b2[1] and b1[3] < b2[3]):
+                continue
+
+            # Waist adjacency: gap or slight overlap at waist <= 15% of top height
+            waist_delta = abs(b1[3] - b2[1])
+            if waist_delta > 0.15 * max(h1, h2):
+                continue
+
+            # Horizontal alignment: substantial horizontal overlap (>= 65% of smaller width)
+            x_inter = max(0.0, min(b1[2], b2[2]) - max(b1[0], b2[0]))
+            if min(w1, w2) <= 0 or (x_inter / min(w1, w2)) < 0.65:
+                continue
+
+            # Combined dress aspect ratio: a complete dress is vertically elongated
+            comb_h = b2[3] - b1[1]
+            comb_w = max(b1[2], b2[2]) - min(b1[0], b2[0])
+            if comb_w <= 0 or (comb_h / comb_w) < 1.15:
+                continue
+
+            # Visual / Color continuity check:
+            color_matches = True
+            if base_img is not None and "mask_array" in d1 and "mask_array" in d2:
+                a1 = mask_to_alpha(d1["mask_array"], H, W)
+                a2 = mask_to_alpha(d2["mask_array"], H, W)
+                det1 = reading_details(base_img, a1, sub1)
+                det2 = reading_details(base_img, a2, "skirt")
+                c1 = det1.get("color")
+                c2 = det2.get("color")
+                if c1 != c2:
+                    color_matches = False
+                    hex1 = det1.get("colorHex")
+                    hex2 = det2.get("colorHex")
+                    if hex1 and hex2:
+                        h1_str = hex1.lstrip("#")
+                        h2_str = hex2.lstrip("#")
+                        if len(h1_str) == 6 and len(h2_str) == 6:
+                            rgb1 = [int(h1_str[k:k+2], 16) for k in (0, 2, 4)]
+                            rgb2 = [int(h2_str[k:k+2], 16) for k in (0, 2, 4)]
+                            dist = sum((a - b)**2 for a, b in zip(rgb1, rgb2)) ** 0.5
+                            if dist < 35.0:
+                                color_matches = True
+
+            if not color_matches:
+                continue
+
+            # Unify into a single complete dress
+            new_sub = "vest_dress" if sub1 == "vest" else "sling_dress"
+            new_xyxy = [min(b1[0], b2[0]), b1[1], max(b1[2], b2[2]), b2[3]]
+            new_mask = (
+                np.maximum(d1["mask_array"], d2["mask_array"])
+                if ("mask_array" in d1 and "mask_array" in d2)
+                else d1.get("mask_array")
+            )
+            new_conf = max(d1["confidence"], d2["confidence"])
+            merged.append({
+                "subcategory": new_sub,
+                "confidence": new_conf,
+                "xyxy": new_xyxy,
+                "mask_array": new_mask,
+                "needsUserInput": True,
+            })
+            used.add(i)
+            used.add(j)
+            break
+
+    remaining = [d for idx, d in enumerate(stage1_kept) if idx not in used]
+    pool = merged + remaining
+
+    # ── Stage 3: Duplicate and shadow suppression ─────────────────────
+    sorted_dets = sorted(pool, key=lambda d: d["confidence"], reverse=True)
+    kept: list[dict] = []
+
+    for cand in sorted_dets:
+        cand_cat = cand.get("category") or DF2_CATEGORY_MAP.get(cand["subcategory"], "tops")
+        is_duplicate = False
+
+        for existing in kept:
+            exist_cat = existing.get("category") or DF2_CATEGORY_MAP.get(existing["subcategory"], "tops")
+            iou, ios = calculate_box_overlap(existing["xyxy"], cand["xyxy"])
+
+            # 1. Same-class duplicate detection
+            if existing["subcategory"] == cand["subcategory"] and iou >= 0.45:
+                is_duplicate = True
+                break
+
+            # 2. Conflicting whole-vs-part detection
+            is_full_body_conflict = (
+                exist_cat in ("dresses", "traditional") and
+                cand_cat in ("tops", "shirt", "bottoms")
+            )
+            if is_full_body_conflict and (iou >= 0.35 or ios >= 0.50):
+                is_duplicate = True
+                break
+
+            # 3. High spatial overlap on identical garment category with low secondary confidence
+            if exist_cat == cand_cat and (iou >= 0.70 or ios >= 0.85) and cand["confidence"] < 0.40:
+                is_duplicate = True
+                break
+
+        if not is_duplicate:
+            kept.append(cand)
+
+    return kept
 
 
 def run(argv: list[str]) -> int:
@@ -487,15 +921,20 @@ def run(argv: list[str]) -> int:
         img, meta = load_image(args.input)
         base = np.asarray(img)
         dets = adapter.predict(img, args.min_conf)
+        # Suppress duplicate and conflicting predictions on the same garment
+        dets = filter_conflicts_and_duplicates(dets, base)
 
         log("separating")
         garments = []
         for idx, det in enumerate(dets):
             sub = det["subcategory"]
             log("isolating")
-            alpha = mask_to_alpha(det["mask_array"], base.shape[0], base.shape[1])
-            iso_path = os.path.join(args.workdir, f"isolated-{idx}.png")
-            thumb_path = os.path.join(args.workdir, f"thumbnail-{idx}.png")
+            alpha, qmeta = refine_mask_to_alpha(det["mask_array"], base.shape[0], base.shape[1], base, sub)
+            unique_suffix = uuid.uuid4().hex[:6]
+            iso_name = f"isolated-{idx}-{unique_suffix}.png"
+            thumb_name = f"thumbnail-{idx}-{unique_suffix}.png"
+            iso_path = os.path.join(args.workdir, iso_name)
+            thumb_path = os.path.join(args.workdir, thumb_name)
             # Save full-canvas isolated image (for reference / future use).
             isolate_garment(base, alpha, iso_path)
             # Save tightly-cropped thumbnail — this is the primary display image.
@@ -505,11 +944,27 @@ def run(argv: list[str]) -> int:
                 log(f"skipping-degenerate-mask-{idx}")
                 continue
             x1, y1, x2, y2 = det["xyxy"]
-            details = reading_details(base, alpha, sub)
+            details = reading_details(base, alpha, sub, det["xyxy"])
             H, W = base.shape[:2]
+
+            # Calibrate needsUserInput:
+            # - Ambiguous taxonomy (outwear classes covering both shirts and layers)
+            # - Uncertain color confidence (< 0.55)
+            # - Model detection confidence below reliable threshold (< 0.60)
+            # - Segmentation quality is acceptable or poor (needs user verification)
+            # - One-piece dress was merged from component detections (request user confirmation)
+            needs_user_input = bool(
+                det.get("needsUserInput") or
+                details["needsUserInput"] or
+                qmeta.get("quality") != "good" or
+                det["confidence"] < 0.60
+            )
+
+            cand_id = f"cand-{int(time.time()*1000)}-{idx}-{unique_suffix}"
             garments.append({
-                "id": f"cand-{idx}",
-                "subcategory": sub,
+                "id": cand_id,
+                "name": details.get("name"),
+                "subcategory": details.get("subcategory", sub),
                 "category": details["category"],
                 "color": details["color"],
                 "colorHex": details["colorHex"],
@@ -522,7 +977,9 @@ def run(argv: list[str]) -> int:
                 "length": details["length"],
                 "season": details["season"],
                 "confidence": round(det["confidence"], 4),
-                "needsUserInput": details["needsUserInput"],
+                "needsUserInput": needs_user_input,
+                "segmentationQuality": qmeta.get("quality", "good"),
+                "qualityIssues": qmeta.get("issues", []),
                 "boundingBox": {
                     "x": round(x1 / W, 4), "y": round(y1 / H, 4),
                     "width": round((x2 - x1) / W, 4),
@@ -530,8 +987,8 @@ def run(argv: list[str]) -> int:
                 },
                 # thumbnailFile is the tight-cropped garment image (primary display).
                 # isolatedFile is the full-canvas masked image (reference).
-                "isolatedFile": f"isolated-{idx}.png",
-                "thumbnailFile": f"thumbnail-{idx}.png",
+                "isolatedFile": iso_name,
+                "thumbnailFile": thumb_name,
             })
         log("preparing")
         result = {

@@ -14,6 +14,7 @@ export function SignInPage() {
   const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -24,7 +25,7 @@ export function SignInPage() {
     setError(null)
     setLoading(true)
     try {
-      await signIn(email, password)
+      await signIn(email, password, rememberMe)
       navigate(from, { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in.')
@@ -88,6 +89,20 @@ export function SignInPage() {
               className="auth-input mt-2"
             />
           </label>
+
+          <div className="flex items-center justify-between py-1">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-sand/40 bg-card text-accent focus:ring-accent accent-accent cursor-pointer"
+              />
+              <span className="text-xs transition-colors" style={{ color: 'var(--maeve-muted)' }}>
+                Keep me signed in on this device.
+              </span>
+            </label>
+          </div>
 
           <Button type="submit" className="w-full" size="lg" arrow disabled={loading}>
             {loading ? 'Signing in…' : 'Sign in'}

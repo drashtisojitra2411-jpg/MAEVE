@@ -393,6 +393,11 @@ export function createStore(db) {
   const deleteExpiredSessionsStmt = db.prepare('DELETE FROM sessions WHERE expires_at <= ?')
 
   return {
+    /**
+     * Persist wardrobe garments in an immediate atomic transaction.
+     * Uses BEGIN IMMEDIATE so concurrent writes never race or leave partial state.
+     * Each unique garment ID creates a new record; updates only occur on matching (user_id, id).
+     */
     saveItems(userId, items) {
       if (!items || items.length === 0) return
       db.exec('BEGIN IMMEDIATE')

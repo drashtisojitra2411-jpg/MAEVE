@@ -66,7 +66,10 @@ function sanitizeItem(item) {
   for (const f of ITEM_FIELDS) {
     if (item[f] !== undefined) out[f] = item[f]
   }
-  out.id = String(item.id ?? cryptoRandomId())
+  // Candidate detection IDs (cand-*) are temporary detection tags; assign a permanent UUID
+  // to ensure new garments are permanently persisted and never overwrite previous records.
+  const rawId = item.id ? String(item.id).trim() : ''
+  out.id = (!rawId || rawId.startsWith('cand-')) ? cryptoRandomId() : rawId
   if (!out.imageUrl) out.imageUrl = out.thumbnailUrl || out.isolatedImageUrl || null
   if (out.imageUrl) out.imageUrl = cleanFileUrl(out.imageUrl)
   if (out.isolatedImageUrl) out.isolatedImageUrl = cleanFileUrl(out.isolatedImageUrl)
@@ -117,6 +120,21 @@ function createRateLimiter({ windowMs, max, message, code = 'TOO_MANY_REQUESTS' 
   }
 }
 
+function isOriginAllowed(allowedConfig, origin) {
+  if (!allowedConfig) return false
+  if (allowedConfig === '*') return true
+  if (!origin) return false
+  const allowedList = allowedConfig.split(',').map((s) => s.trim()).filter(Boolean)
+  for (const pattern of allowedList) {
+    if (pattern === '*' || pattern === origin) return true
+    if (pattern.includes('*')) {
+      const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*')
+      if (new RegExp(`^${escaped}$`).test(origin)) return true
+    }
+  }
+  return false
+}
+
 export function createApp({ db } = {}) {
   ensureDirectories()
   const database = db ?? initDb()
@@ -159,14 +177,18 @@ export function createApp({ db } = {}) {
   app.use((req, res, next) => {
     const origin = req.headers.origin
     const allowed = config.corsOrigin
-    if (allowed) {
-      if (allowed === '*' || allowed.split(',').map((s) => s.trim()).includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin || allowed)
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        res.setHeader('Access-Control-Allow-Credentials', 'true')
-        res.setHeader('Access-Control-Max-Age', '86400')
-      }
+    if (allowed && origin && isOriginAllowed(allowed, origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin)
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      res.setHeader('Access-Control-Allow-Credentials', 'true')
+      res.setHeader('Access-Control-Max-Age', '86400')
+      res.setHeader('Vary', 'Origin')
+    } else if (allowed === '*') {
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      res.setHeader('Access-Control-Max-Age', '86400')
     }
     if (req.method === 'OPTIONS') {
       res.sendStatus(204)
@@ -788,11 +810,23 @@ export function createApp({ db } = {}) {
   // ── Production Frontend Static Serving ──────────────────────────────
   const clientDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'dist')
   if (fs.existsSync(clientDist)) {
-    app.use(express.static(clientDist, { index: false }))
+    app.use(
+      express.static(clientDist, {
+        index: false,
+        maxAge: '1y',
+        immutable: true,
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('index.html')) {
+            res.setHeader('Cache-Control', 'no-cache')
+          }
+        },
+      }),
+    )
     app.get('*', (req, res, next) => {
       if (req.path.startsWith('/api/')) return next()
       const indexFile = path.join(clientDist, 'index.html')
       if (fs.existsSync(indexFile)) {
+        res.setHeader('Cache-Control', 'no-cache')
         res.sendFile(indexFile)
       } else {
         next()

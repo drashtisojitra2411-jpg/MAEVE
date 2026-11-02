@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { WardrobeItem } from '../types'
 import { useAuth } from './auth'
+import { uid } from './uid'
 import { getApiToken } from '../services/apiClient'
 import { readWardrobe, removeFromWardrobe, writeWardrobe } from '../services/wardrobeService'
 import {
@@ -82,16 +83,23 @@ export function WardrobeProvider({ children }: { children: React.ReactNode }) {
         createdAt: item.createdAt ?? Date.now(),
         updatedAt: Date.now(),
       }))
-      // Deduplicate by ID so upload retries or repeated confirmations never create duplicates
+      // Preserve all existing garments; ensure every added item receives a guaranteed unique ID
       const map = new Map(items.map((i) => [i.id, i]))
+      const finalItems: WardrobeItem[] = []
       for (const item of stamped) {
-        map.set(item.id, item)
+        let uniqueId = item.id
+        if (!uniqueId || uniqueId.startsWith('cand-') || map.has(uniqueId)) {
+          uniqueId = uid()
+        }
+        const finalized = { ...item, id: uniqueId }
+        map.set(uniqueId, finalized)
+        finalItems.push(finalized)
       }
       const next = Array.from(map.values())
       writeWardrobe(userId, next)
       setItems(next)
       setStatus('ready')
-      void pushWardrobeToServer(stamped)
+      void pushWardrobeToServer(finalItems)
     },
     [userId, items],
   )

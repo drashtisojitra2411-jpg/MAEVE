@@ -47,7 +47,7 @@ export function GarmentPhoto({
     <div
       className={cn('relative isolate overflow-hidden w-full h-full flex items-center justify-center', className)}
       style={{
-        background: `linear-gradient(160deg, #faf9f7, ${garment.colorHex ?? '#EDE6D9'} 180%)`,
+        background: `linear-gradient(160deg, var(--maeve-surface), ${garment.colorHex ?? 'var(--maeve-raised)'} 180%)`,
       }}
     >
       {showImage ? (

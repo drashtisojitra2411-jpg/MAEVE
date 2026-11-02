@@ -89,6 +89,8 @@ export interface DetectionBox {
 export interface DetectedGarment {
   /** Stable id used by the backend for this candidate. */
   id?: string
+  /** Editorial or model-derived garment name */
+  name?: string | null
   /** Isolated garment image (transparent background, server-served). */
   imageUrl?: string
   /** Square-ish mask-cropped thumbnail. */
@@ -109,11 +111,15 @@ export interface DetectedGarment {
   sleeve?: string | null
   length?: string | null
   season?: string | null
-  /** True when the model's confidence is below the confirm threshold. */
+  /** True when the model's confidence is below the confirm threshold or quality needs review. */
   needsUserInput?: boolean
   confidence?: number | null
   boundingBox?: DetectionBox | null
   segmentationMask?: string | null
+  /** Quality validation score of the extracted mask */
+  segmentationQuality?: 'good' | 'acceptable' | 'poor'
+  /** Quality issues detected during mask validation */
+  qualityIssues?: string[]
 }
 
 /** Honest end-states of a real garment-analysis run. */

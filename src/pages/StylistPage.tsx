@@ -552,26 +552,32 @@ export function StylistPage() {
                   </span>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-4">
-                  {OCCASIONS.map((occ) => (
-                    <button
-                      key={occ.id}
-                      type="button"
-                      onClick={() => setOccasion(occ.id)}
-                      className={cn(
-                        'border p-3.5 text-left transition-all',
-                        occasion === occ.id
-                          ? 'border-accent bg-accent/10 shadow-sm'
-                          : 'border-line/70 bg-card hover:border-accent/40',
-                      )}
-                    >
-                      <p className={cn('text-[11px] font-medium tracking-wide', occasion === occ.id ? 'text-accent' : 'text-ink')}>
-                        {occ.label}
-                      </p>
-                      <p className="mt-1 line-clamp-1 text-[9px] text-muted">
-                        {occ.subtitle}
-                      </p>
-                    </button>
-                  ))}
+                  {OCCASIONS.map((occ) => {
+                    const isSelected = occasion === occ.id
+                    return (
+                      <button
+                        key={occ.id}
+                        type="button"
+                        onClick={() => setOccasion(occ.id)}
+                        className={cn(
+                          'pref-card',
+                          isSelected && 'pref-card-active',
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-1.5">
+                          <p className={cn('text-[11px] font-medium tracking-wide text-ink', isSelected && 'font-semibold')}>
+                            {occ.label}
+                          </p>
+                          {isSelected && (
+                            <Check className="h-3 w-3 text-accent stroke-[2.5] flex-shrink-0 mt-0.5" />
+                          )}
+                        </div>
+                        <p className="mt-1 line-clamp-1 text-[9px] text-muted">
+                          {occ.subtitle}
+                        </p>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -583,21 +589,25 @@ export function StylistPage() {
                     2. Style Aesthetic
                   </label>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {STYLES.map((st) => (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => setStylePref(st)}
-                        className={cn(
-                          'px-3.5 py-1.5 text-[10px] uppercase tracking-[0.2em] transition-colors',
-                          stylePref === st
-                            ? 'bg-ink text-sand'
-                            : 'border border-line/80 bg-card text-muted hover:text-ink',
-                        )}
-                      >
-                        {st}
-                      </button>
-                    ))}
+                    {STYLES.map((st) => {
+                      const isSelected = stylePref === st
+                      return (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => setStylePref(st)}
+                          className={cn(
+                            'pref-chip',
+                            isSelected && 'pref-chip-active',
+                          )}
+                        >
+                          {isSelected && (
+                            <Check className="h-2.5 w-2.5 text-accent stroke-[2.5] -ml-0.5" />
+                          )}
+                          <span>{st}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -607,21 +617,25 @@ export function StylistPage() {
                     3. Comfort Priority
                   </label>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {PREFERENCES.map((pr) => (
-                      <button
-                        key={pr}
-                        type="button"
-                        onClick={() => setComfortPref(pr)}
-                        className={cn(
-                          'px-3.5 py-1.5 text-[10px] uppercase tracking-[0.2em] transition-colors',
-                          comfortPref === pr
-                            ? 'bg-ink text-sand'
-                            : 'border border-line/80 bg-card text-muted hover:text-ink',
-                        )}
-                      >
-                        {pr}
-                      </button>
-                    ))}
+                    {PREFERENCES.map((pr) => {
+                      const isSelected = comfortPref === pr
+                      return (
+                        <button
+                          key={pr}
+                          type="button"
+                          onClick={() => setComfortPref(pr)}
+                          className={cn(
+                            'pref-chip',
+                            isSelected && 'pref-chip-active',
+                          )}
+                        >
+                          {isSelected && (
+                            <Check className="h-2.5 w-2.5 text-accent stroke-[2.5] -ml-0.5" />
+                          )}
+                          <span>{pr}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -711,22 +725,26 @@ export function StylistPage() {
 
                   <div className="flex flex-wrap items-center gap-3">
                     {/* Rank switcher pills */}
-                    {recommendations.map((rec, idx) => (
-                      <button
-                        key={rec.id || idx}
-                        type="button"
-                        onClick={() => setSelectedRank(idx)}
-                        className={cn(
-                          'px-4 py-2 text-[10px] uppercase tracking-[0.2em] transition-all flex items-center gap-2',
-                          selectedRank === idx
-                            ? 'bg-ink text-sand font-medium'
-                            : 'border border-line bg-card text-muted hover:text-ink',
-                        )}
-                      >
-                        <span>#{idx + 1} {idx === 0 ? 'Best Match' : 'Option'}</span>
-                        {rec.score && <span className="text-accent font-semibold">{rec.score}%</span>}
-                      </button>
-                    ))}
+                    {recommendations.map((rec, idx) => {
+                      const isSelected = selectedRank === idx
+                      return (
+                        <button
+                          key={rec.id || idx}
+                          type="button"
+                          onClick={() => setSelectedRank(idx)}
+                          className={cn(
+                            'pref-chip px-4 py-2',
+                            isSelected && 'pref-chip-active',
+                          )}
+                        >
+                          {isSelected && (
+                            <Check className="h-2.5 w-2.5 text-accent stroke-[2.5]" />
+                          )}
+                          <span>#{idx + 1} {idx === 0 ? 'Best Match' : 'Option'}</span>
+                          {rec.score && <span className="text-accent font-semibold">{rec.score}%</span>}
+                        </button>
+                      )
+                    })}
 
                     <button
                       type="button"
